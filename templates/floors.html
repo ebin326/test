@@ -1,0 +1,102 @@
+<!-- templates/floors.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floors</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+    <h1>Floors</h1>
+
+    <form id="add-floor-form">
+        <label for="level">Level:</label>
+        <input type="number" id="level" name="level" required>
+
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <button type="button" onclick="addFloor()">Add Floor</button>
+    </form>
+
+    <ul id="floors-list"></ul>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        function addFloor() {
+            const level = $('#level').val();
+            const name = $('#name').val();
+
+            $.ajax({
+                type: 'POST',
+                url: '/api/floors',
+                contentType: 'application/json',
+                data: JSON.stringify({ level, name }),
+                success: function(response) {
+                    alert(response.message);
+                    loadFloors();
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        }
+
+        function loadFloors() {
+            // Fetch floors data using AJAX
+            $.get('/api/floors', function(data) {
+                $('#floors-list').empty();
+                data.forEach(function(floor) {
+                    $('#floors-list').append('<li>Floor ' + floor.level + ' - Name: ' + floor.name +
+                        ' <button onclick="updateFloor(' + floor.id + ')">Update</button>' +
+                        ' <button onclick="deleteFloor(' + floor.id + ')">Delete</button></li>');
+                });
+            });
+        }
+
+        function updateFloor(floorId) {
+            // Prompt user for new values
+            const level = prompt('Enter new level:');
+            const name = prompt('Enter new name:');
+
+            // Check if the user entered values
+            if (level !== null && name !== null) {
+                $.ajax({
+                    type: 'PUT',
+                    url: `/api/floors/${floorId}`,
+                    contentType: 'application/json',
+                    data: JSON.stringify({ level, name }),
+                    success: function(response) {
+                        alert(response.message);
+                        loadFloors();
+                    },
+                    error: function(error) {
+                        console.error(error);
+                    }
+                });
+            }
+        }
+
+        function deleteFloor(floorId) {
+            $.ajax({
+                type: 'DELETE',
+                url: '/api/floors/' + floorId,
+                success: function(response) {
+                    alert(response.message);
+                    loadFloors();
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Initial load of floors
+            loadFloors();
+        });
+    </script>
+</body>
+</html>

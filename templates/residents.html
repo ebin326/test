@@ -1,0 +1,123 @@
+<!-- templates/residents.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Residents</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+    <h1>Residents</h1>
+
+    <form id="add-resident-form">
+        <label for="firstname">First Name:</label>
+        <input type="text" id="firstname" name="firstname" required>
+        
+        <label for="lastname">Last Name:</label>
+        <input type="text" id="lastname" name="lastname" required>
+
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age" required>
+
+        <label for="room_id">Room:</label>
+        <select id="room_id" name="room_id" required>
+            <!-- Room options will be dynamically loaded here -->
+        </select>
+
+        <button type="button" onclick="addResident()">Add Resident</button>
+    </form>
+
+    <ul id="residents-list"></ul>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        function addResident() {
+            const firstname = $('#firstname').val();
+            const lastname = $('#lastname').val();
+            const age = $('#age').val();
+            const room_id = $('#room_id').val();
+
+            $.ajax({
+                type: 'POST',
+                url: '/api/residents',
+                contentType: 'application/json',
+                data: JSON.stringify({ firstname, lastname, age, room_id }),
+                success: function(response) {
+                    alert(response.message);
+                    loadResidents();
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        }
+
+        function loadResidents() {
+            // Fetch rooms data first
+            $.get('/api/rooms', function(rooms) {
+                const roomDropdown = $('#room_id');
+                roomDropdown.empty();
+                rooms.forEach(function(room) {
+                    roomDropdown.append('<option value="' + room.id + '">Room ' + room.number + '</option>');
+                });
+
+                // After loading rooms, fetch residents data
+                $.get('/api/residents', function(residents) {
+                    $('#residents-list').empty();
+                    residents.forEach(function(resident) {
+                        $('#residents-list').append('<li>' + resident.firstname + ' ' + resident.lastname + ' - Age: ' + resident.age +
+                            ' <button onclick="updateResident(' + resident.id + ')">Update</button>' +
+                            ' <button onclick="deleteResident(' + resident.id + ')">Delete</button></li>');
+                    });
+                });
+            });
+        }
+
+        function updateResident(residentId) {
+            // Prompt user for new values
+            const firstname = prompt('Enter new firstname:');
+            const lastname = prompt('Enter new lastname:');
+            const age = prompt('Enter new age:');
+            const room_id = prompt('Enter new room ID:');
+
+            // Check if the user entered values
+            if (firstname !== null && lastname !== null && age !== null && room_id !== null) {
+                $.ajax({
+                    type: 'PUT',
+                    url: `/api/residents/${residentId}`,
+                    contentType: 'application/json',
+                    data: JSON.stringify({ firstname, lastname, age, room_id }),
+                    success: function(response) {
+                        alert(response.message);
+                        loadResidents();
+                    },
+                    error: function(error) {
+                        console.error(error);
+                    }
+                });
+            }
+        }
+
+        function deleteResident(residentId) {
+            $.ajax({
+                type: 'DELETE',
+                url: '/api/residents/' + residentId,
+                success: function(response) {
+                    alert(response.message);
+                    loadResidents();
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Initial load of residents
+            loadResidents();
+        });
+    </script>
+</body>
+</html>
